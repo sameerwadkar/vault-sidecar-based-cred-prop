@@ -1,0 +1,47 @@
+apiVersion: apps.dominodatalab.com/v1alpha1
+kind: Mutation
+metadata:
+  name: app-cloud-creds-mutation
+rules:
+  - # Optional. List of hardware tier ids
+    #hardwareTierIdSelector: []
+    # Optional. List of organization names
+    #organizationSelector: []
+    # Optional. List of user names
+    # Insert volume mount into specific containers
+    labelSelectors:
+    - "dominodatalab.com/workload-type=App"
+    # Insert arbitrary container into matching Pod.
+    insertContainer:
+      # 'app' or 'init'
+      containerType: app
+      # List of label selectors.
+      # ALL must match.
+      # Supportes equality and set-based matching
+      # Arbitrary object
+      spec:
+        name: z-vault-cloud-creds
+        image: quay.io/domino/app-cloud-creds:beta_v1
+        args: ['/','5010' ]
+        volumeMounts:
+          - name: log-volume
+            mountPath: /var/log/
+          - mountPath: /var/vault/
+            name: token
+          - name: dynamic-aws-creds-config
+            mountPath: /var/config/
+            readOnly: true
+    insertVolumes:
+      - emptyDir: { }
+        name: log-volume
+      - name: token
+        secret:
+          secretName: vault-token
+      - name: dynamic-aws-creds-config
+        configMap:
+          name: dynamic-aws-creds-config
+      #- name: token
+      #  secret:
+      #    secretName: token
+
+
